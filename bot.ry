@@ -1,0 +1,70 @@
+import logging
+import sys
+from aiogram import Bot, Dispatcher, html
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+from openai import AsyncOpenAI
+
+# Твои данные
+TOKEN = "9198045164:AAHTuGxNrAW29khpT1UC1x4vD6_UhtS6SnI"
+DEEPSEEK_API_KEY = "мой ключ"
+
+# Инициализация клиента DeepSeek (через OpenAI-совместимый API)
+client = AsyncOpenAI(
+    api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com"
+)
+
+# Системный промт с учетом характера и контекста
+SYSTEM_PROMPT = """
+Ты — Джарвис, личный ИИ-помощник Максима. 
+Максим — опытный машинист гусеничного экскаватора (LiuGong 922E) с 12-летним стажем, живет в Сибири (Искитим), у него золотые руки, своя дача, машина Geely MK Cross, он ценит прямой, честный и мужской подход без лишней воды. Общайся с ним на равных, по-свойски, уважительно, с юмором и без дурацкой лести. Помогай решать любые рабочие, технические и жизненные задачи.
+"""
+
+dp = Dispatcher()
+
+
+@dp.message(CommandStart())
+async def command_start_handler(message: Message) -> None:
+  user_name = message.from_user.first_name or "Максим"
+  await message.answer(
+      f"Здорово, {html.quote(user_name)}! 🤝 Джарвис на связи. Чем выручить?"
+  )
+
+
+@dp.message()
+async def chat_with_deepseek(message: Message) -> None:
+  if not message.text:
+    return
+
+  # Показываем статус печати, пока думает ИИ
+  await message.bot.send_chat_action(
+      chat_id=message.chat.id, action="typing"
+  )
+
+  try:
+    response = await client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": message.text},
+        ],
+        stream=False,
+    )
+    answer = response.choices[0].message.content
+    await message.answer(answer)
+  except Exception as e:
+    await message.answer(f"Брат, что-то пошло не так при запросе к нейросети: {e}")
+
+
+async def main() -> None:
+  bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+  await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+  logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+  import asyncio
+
+  asyncio.run(main())
