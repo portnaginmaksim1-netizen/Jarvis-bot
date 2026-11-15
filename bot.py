@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -11,17 +10,12 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-client = OpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url="https://api.deepseek.com",
-)
+client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
 
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-  await message.answer(
-      "Здорова! Джарвис на связи и готов к работе. Чем могу помочь?"
-  )
+  await message.answer("Здорова! Джарвис на связи.")
 
 
 @dp.message()
@@ -36,16 +30,13 @@ async def handle_message(message: types.Message):
             },
             {"role": "user", "content": message.text},
         ],
-        stream=False,
     )
-    answer = response.choices[0].message.content
-    await message.answer(answer)
+    await message.answer(response.choices[0].message.content)
   except Exception as e:
-    await message.answer(f"Произошла ошибка при обращении к нейросети: {e}")
+    await message.answer(f"Ошибка: {e}")
 
 
 async def main():
-  logging.basicConfig(level=logging.INFO)
   await dp.start_polling(bot)
 
 
