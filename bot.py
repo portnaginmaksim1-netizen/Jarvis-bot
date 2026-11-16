@@ -1,4 +1,8 @@
-@bot.message_handler(func=lambda message: True)
+import telebot
+import requests
+
+TOKEN = "ТВОЙ_ТОКЕН_БОТА"
+bot = telebot.TeleBot(TOKEN)@bot.message_handler(func=lambda message: True)
 def handle_message(message):
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
